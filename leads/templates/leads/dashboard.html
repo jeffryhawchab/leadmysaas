@@ -1,0 +1,34 @@
+{% extends 'leads/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>Campaigns</h2>
+  <a href="{% url 'create_campaign' %}" class="btn btn-primary">+ New Campaign</a>
+</div>
+
+{% if campaigns %}
+  <div class="row g-3">
+    {% for campaign in campaigns %}
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">{{ campaign.name }}</h5>
+          <p class="text-muted small">{{ campaign.saas_description|truncatechars:80 }}</p>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="badge bg-primary">{{ campaign.leads.count }} leads</span>
+            <a href="{% url 'campaign_detail' campaign.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+          </div>
+        </div>
+        <div class="card-footer text-muted small">{{ campaign.created_at|date:"M d, Y" }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="text-center py-5 text-muted">
+    <h4>No campaigns yet</h4>
+    <p>Create your first campaign to start finding leads.</p>
+    <a href="{% url 'create_campaign' %}" class="btn btn-primary">Get Started</a>
+  </div>
+{% endif %}
+{% endblock %}

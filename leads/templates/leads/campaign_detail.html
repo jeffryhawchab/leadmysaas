@@ -1,0 +1,77 @@
+{% extends 'leads/base.html' %}
+{% block title %}{{ campaign.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h2>{{ campaign.name }}</h2>
+    <p class="text-muted">{{ campaign.target_audience }}</p>
+  </div>
+  <form method="post" action="{% url 'run_scrape' campaign.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success" onclick="this.disabled=true;this.innerText='Scraping...';this.form.submit();">
+      🤖 Run AI Scrape
+    </button>
+  </form>
+</div>
+
+{% if campaign.ai_search_queries %}
+<div class="card mb-4 border-0 bg-light">
+  <div class="card-body">
+    <h6 class="fw-bold">AI-Generated Search Queries</h6>
+    <pre class="mb-0 small">{{ campaign.ai_search_queries }}</pre>
+  </div>
+</div>
+{% endif %}
+
+<h5>Leads ({{ leads.count }})</h5>
+{% if leads %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Name</th><th>Title</th><th>Company</th><th>Email</th>
+        <th>Score</th><th>Status</th><th>LinkedIn</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lead in leads %}
+      <tr>
+        <td>{{ lead.name|default:"—" }}</td>
+        <td class="text-muted small">{{ lead.title|default:"—" }}</td>
+        <td class="text-muted small">{{ lead.company|default:"—" }}</td>
+        <td>
+          {% if lead.email %}
+            <a href="mailto:{{ lead.email }}">{{ lead.email }}</a>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          <span class="badge {% if lead.ai_score >= 70 %}bg-success{% elif lead.ai_score >= 40 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+            {{ lead.ai_score }}
+          </span>
+        </td>
+        <td>
+          <form method="post" action="{% url 'update_lead_status' lead.pk %}">
+            {% csrf_token %}
+            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+              {% for val, label in lead.STATUS_CHOICES %}
+                <option value="{{ val }}" {% if lead.status == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </td>
+        <td>
+          {% if lead.linkedin_url %}
+            <a href="{{ lead.linkedin_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">View</a>
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="text-center py-4 text-muted">
+  <p>No leads yet. Click <strong>Run AI Scrape</strong> to find leads.</p>
+</div>
+{% endif %}
+{% endblock %}
