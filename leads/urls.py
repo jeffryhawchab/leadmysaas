@@ -2,9 +2,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.dashboard, name='dashboard'),
-    path('campaign/new/', views.create_campaign, name='create_campaign'),
-    path('campaign/<int:pk>/', views.campaign_detail, name='campaign_detail'),
-    path('campaign/<int:pk>/scrape/', views.run_scrape, name='run_scrape'),
-    path('lead/<int:pk>/status/', views.update_lead_status, name='update_lead_status'),
+    path('api/campaigns/', views.api_campaigns, name='api_campaigns'),
+    path('api/campaigns/<int:pk>/', views.api_campaign_detail, name='api_campaign_detail'),
+    path('api/campaigns/<int:pk>/scrape/', views.api_run_scrape, name='api_run_scrape'),
+    path('api/leads/<int:pk>/', views.api_update_lead, name='api_update_lead'),
+    path('api/campaigns/<int:pk>/export/', views.api_export_excel, name='api_export_excel'),
+    path('', views.index, name='index'),
+    path('<path:path>', views.index, name='index_catch'),
 ]

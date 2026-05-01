@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'leads',
 ]
 
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
