@@ -7,7 +7,7 @@ A Django + React app that automates B2B cold email lead generation. Describe you
 - Create campaigns with your SaaS description and target audience
 - AI generates targeted LinkedIn search queries optimized for email visibility
 - Finds real LinkedIn profiles via Serper.dev (Google search API)
-- Multi-strategy email extraction: snippet parsing → Serper search → LinkedIn page scrape → domain guessing
+- Multi-strategy email extraction: Apollo.io → Serper search → LinkedIn page scrape → domain guessing
 - AI batch-scores all leads in one call (0–100) with strict ICP rubric
 - Profiles with visible emails are prioritized and score-boosted
 - Lead status management (New → Contacted → Qualified → Rejected)
@@ -71,6 +71,7 @@ Copy `.env.example` to `.env` and fill in your keys:
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 GROQ_API_KEY=your_groq_api_key_here
 SERPER_API_KEY=your_serper_api_key_here
+APOLLO_API_KEY=your_apollo_api_key_here
 ```
 
 | Key | Where to get it | Free tier |
@@ -78,6 +79,7 @@ SERPER_API_KEY=your_serper_api_key_here
 | `OPENROUTER_API_KEY` | [openrouter.ai/keys](https://openrouter.ai/keys) | Free models available |
 | `GROQ_API_KEY` | [console.groq.com/keys](https://console.groq.com/keys) | 14,400 req/day |
 | `SERPER_API_KEY` | [serper.dev](https://serper.dev) | 2,500 free searches |
+| `APOLLO_API_KEY` | [app.apollo.io](https://app.apollo.io) → Settings → API | 50 free exports/month |
 
 ### 6. Run migrations
 
@@ -131,11 +133,12 @@ Then open [http://localhost:5173](http://localhost:5173)
 
 ## How Email Hunting Works
 
-For each good-fit profile the scraper tries 3 strategies in order:
+For each good-fit profile (score ≥ 60) the scraper tries 4 strategies in order:
 
-1. **Serper search** — searches `"Name" "Company" email` and `"Name" "Company" contact "@"` to find publicly indexed emails
-2. **LinkedIn page scrape** — fetches the public profile page and extracts any visible email
-3. **Domain guessing** — finds the company domain via Serper, then tries common formats: `first@domain.com`, `first.last@domain.com`, `flast@domain.com`
+1. **Apollo.io** — matches name + company + LinkedIn URL against 275M+ contact database (50 free exports/month)
+2. **Serper search** — searches `"Name" "Company" email` and `"Name" "Company" contact "@"` to find publicly indexed emails
+3. **LinkedIn page scrape** — fetches the public profile page and extracts any visible email
+4. **Domain guessing** — finds the company domain via Serper, then tries common formats: `first@domain.com`, `first.last@domain.com`, `flast@domain.com`
 
 ## Project Structure
 

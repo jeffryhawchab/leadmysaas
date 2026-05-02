@@ -26,10 +26,12 @@ load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+APOLLO_API_KEY = os.getenv("APOLLO_API_KEY")
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 SERPER_URL = "https://google.serper.dev/search"
+APOLLO_URL = "https://api.apollo.io/v1/people/match"
 
 FREE_MODELS = [
     "meta-llama/llama-3.3-70b-instruct:free",
@@ -181,10 +183,44 @@ def search_linkedin_profiles(query: str) -> list[dict]:
 
 # -- Email hunting -------------------------------------------------------------
 
-def find_email(name: str, company: str, linkedin_url: str) -> str:
-    username = linkedin_url.rstrip("/").split("/")[-1]
+def apollo_find_email(name: str, company: str, linkedin_url: str) -> str:
+    """Apollo.io People Match — 50 free exports/month, huge database."""
+    if not APOLLO_API_KEY:
+        return ""
+    try:
+        parts = name.strip().split()
+        payload = {
+            "api_key": APOLLO_API_KEY,
+            "first_name": parts[0] if parts else "",
+            "last_name": parts[-1] if len(parts) > 1 else "",
+            "organization_name": company,
+            "linkedin_url": linkedin_url,
+            "reveal_personal_emails": True,
+        }
+        resp = requests.post(APOLLO_URL, json=payload, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        person = data.get("person") or {}
+        email = person.get("email") or ""
+        if not email:
+            emails = person.get("personal_emails") or []
+            email = emails[0] if emails else ""
+        if email:
+            log(f"[email] Apollo found: {email}")
+        return email
+    except Exception as e:
+        log(f"[apollo error] {e}")
+        return ""
 
-    # Strategy 1: search for their email via Serper
+
+def find_email(name: str, company: str, linkedin_url: str) -> str:
+    # Strategy 1: Apollo.io — verified email from name + company + LinkedIn URL
+    email = apollo_find_email(name, company, linkedin_url)
+    if email:
+        return email
+
+    # Strategy 2: Serper search for publicly indexed email
+    username = linkedin_url.rstrip("/").split("/")[-1]
     search_queries = []
     if name and company:
         search_queries.append(f'"{name}" "{company}" email')
@@ -201,7 +237,7 @@ def find_email(name: str, company: str, linkedin_url: str) -> str:
                 return email
         time.sleep(0.5)
 
-    # Strategy 2: scrape LinkedIn page directly
+    # Strategy 3: scrape LinkedIn page directly
     try:
         resp = requests.get(linkedin_url, headers=HEADERS, timeout=10)
         email = extract_email(resp.text)
@@ -211,7 +247,7 @@ def find_email(name: str, company: str, linkedin_url: str) -> str:
     except Exception:
         pass
 
-    # Strategy 3: guess common email formats from company domain
+    # Strategy 4: guess common email formats from company domain
     if name and company:
         domain = guess_domain(company)
         if domain:
